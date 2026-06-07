@@ -1,0 +1,45 @@
+name: hitun-checkin
+
+on:
+  # 每天北京时间 08:00 跑（UTC 00:00）
+  schedule:
+    - cron: '0 0 * * *'
+  # 允许手动触发（调试用）
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}
+  cancel-in-progress: false
+
+jobs:
+  checkin:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Run checkin
+        env:
+          # ⭐ 必填：抓包 /user/checkin 得到的 curl bash 整段
+          HITUN_CURL_BASH: ${{ secrets.HITUN_CURL_BASH }}
+          # 可选：通知渠道（pushplus / wxpusher / telegram / serverchan）
+          PUSH_METHOD: ${{ secrets.PUSH_METHOD }}
+          PUSHPLUS_TOKEN: ${{ secrets.PUSHPLUS_TOKEN }}
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          WXPUSHER_SPT: ${{ secrets.WXPUSHER_SPT }}
+          SERVERCHAN_SPT: ${{ secrets.SERVERCHAN_SPT }}
+        run: |
+          python main.py
